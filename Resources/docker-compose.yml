@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Application service
+  app:
+    build:
+      context: .
+      target: development
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/medicare-plus
+      - PORT=8080
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  # MongoDB service
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=medicare-plus
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  # MongoDB Admin UI (optional)
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongodb
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+networks:
+  hospital-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
